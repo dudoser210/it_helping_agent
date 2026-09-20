@@ -1,0 +1,57 @@
+name: it-helping-agent
+services:
+  agent:
+    build: .
+    env_file: [.env]
+    ports: ["8000:8000"]
+    volumes: ["helping_data:/app/data"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    read_only: true
+    tmpfs: ["/tmp:size=128m,noexec,nosuid"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 200
+    mem_limit: 2g
+    restart: unless-stopped
+    depends_on:
+      jaeger: {condition: service_started}
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ./observability/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports: ["9090:9090"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: helping-demo
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    depends_on: [prometheus]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.68.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["16686:16686"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  helping_data:
+  prometheus_data:
+  grafana_data:
