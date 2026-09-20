@@ -1,0 +1,10 @@
+{
+  "title": "IT Helping Agent", "uid": "helping-agent", "schemaVersion": 39,
+  "refresh": "10s", "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {"type":"stat","title":"Заявок за 5 минут","id":1,"gridPos":{"x":0,"y":0,"w":6,"h":5},"targets":[{"expr":"sum(increase(helping_requests_total[5m]))","refId":"A"}]},
+    {"type":"stat","title":"Ошибки LLM за 5 минут","id":2,"gridPos":{"x":6,"y":0,"w":6,"h":5},"targets":[{"expr":"sum(increase(helping_llm_errors_total[5m]))","refId":"A"}]},
+    {"type":"timeseries","title":"p50 / p95 задержка","id":3,"gridPos":{"x":0,"y":5,"w":12,"h":8},"targets":[{"expr":"histogram_quantile(0.5, sum(rate(helping_request_duration_seconds_bucket[5m])) by (le))","legendFormat":"p50","refId":"A"},{"expr":"histogram_quantile(0.95, sum(rate(helping_request_duration_seconds_bucket[5m])) by (le))","legendFormat":"p95","refId":"B"}]},
+    {"type":"timeseries","title":"Токены по агентам","id":4,"gridPos":{"x":12,"y":0,"w":12,"h":13},"targets":[{"expr":"sum(rate(helping_tokens_total[5m])) by (agent, kind)","legendFormat":"{{agent}} / {{kind}}","refId":"A"}]}
+  ]
+}

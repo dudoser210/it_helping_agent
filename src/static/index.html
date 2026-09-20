@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IT Helping Agent</title>
+  <style>
+    :root{--ink:#172033;--muted:#64748b;--blue:#2563eb;--bg:#eef2ff;--card:#fff;--line:#dbe4f0;--ok:#047857}
+    *{box-sizing:border-box}body{margin:0;font:15px/1.5 Inter,system-ui,sans-serif;color:var(--ink);background:linear-gradient(135deg,#e0e7ff,#f8fafc 50%,#dbeafe)}
+    main{max-width:980px;margin:auto;padding:48px 20px 80px}.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+    h1{font-size:clamp(34px,6vw,58px);line-height:1.02;margin:8px 0 14px;max-width:760px}.lead{color:var(--muted);font-size:18px;max-width:720px}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:32px}.card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 16px 50px #1e3a8a12}
+    label{font-weight:650;display:block;margin:14px 0 6px}input,textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:150px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{margin-top:16px;border:0;border-radius:10px;background:var(--blue);color:#fff;padding:12px 18px;font-weight:700;cursor:pointer;width:100%}button:disabled{opacity:.55}
+    #result{white-space:pre-wrap}.empty{color:var(--muted)}.badge{display:inline-block;border-radius:99px;background:#dbeafe;color:#1d4ed8;padding:4px 9px;margin:0 4px 8px 0;font-size:12px;font-weight:700}
+    ol{padding-left:22px}.meta{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:16px}.error{color:#b91c1c}.status{color:var(--ok);font-weight:700}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}main{padding-top:28px}.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">Локально · Ollama · Qwen3.5</div>
+  <h1>IT Helping Agent</h1>
+  <p class="lead">Мультиагентная диагностика Wi-Fi, принтеров, доступов и программ. Заявка и история остаются на вашем компьютере.</p>
+  <div class="grid">
+    <section class="card"><h2>Новая заявка</h2><form id="ticket">
+      <label for="employee">ID сотрудника</label><input id="employee" value="demo-user" required maxlength="80">
+      <label for="text">Что произошло?</label><textarea id="text" placeholder="Например: ноутбук подключён к Wi-Fi, но сайты не открываются..." required minlength="5"></textarea>
+      <div class="row"><div><label for="device">Устройство</label><input id="device" placeholder="ThinkPad T14"></div><div><label for="os">ОС</label><input id="os" placeholder="Windows 11"></div></div>
+      <button id="submit">Диагностировать</button>
+    </form></section>
+    <section class="card"><h2>Результат</h2><div id="result" class="empty">Здесь появится план действий и решение об эскалации.</div></section>
+  </div>
+</main><script>
+const form=document.querySelector('#ticket'), out=document.querySelector('#result'), btn=document.querySelector('#submit');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+form.addEventListener('submit',async e=>{e.preventDefault();btn.disabled=true;btn.textContent='Агенты работают…';out.className='empty';out.textContent='Классификация → специалисты → проверка политики → итог';
+try{const body={employee_id:employee.value,text:text.value,device:device.value||null,os:os.value||null};const r=await fetch('/api/v1/tickets',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Ошибка');
+out.className='';out.innerHTML=`<div class="status">${esc(d.status)} · ${esc(d.priority)}</div><h3>${esc(d.summary)}</h3><p>${esc(d.response)}</p>${d.steps.length?`<h3>Шаги</h3><ol>${d.steps.map(x=>`<li><b>${esc(x.action)}</b><br><small>${esc(x.expected_result)} · ${esc(x.risk)}</small></li>`).join('')}</ol>`:''}${d.questions.length?`<h3>Уточните</h3><ul>${d.questions.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<div>${d.category.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div><div class="meta">${esc(d.ticket_id)} · ${d.latency_ms} мс · агенты: ${d.agents_used.map(esc).join(', ')}</div>`;
+}catch(err){out.className='error';out.textContent=err.message}finally{btn.disabled=false;btn.textContent='Диагностировать'}});
+</script></body></html>

@@ -1,0 +1,21 @@
+groups:
+  - name: helping
+    rules:
+      - alert: HelpingAgentDown
+        expr: up{job="helping-agent"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Helping Agent недоступен"
+      - alert: HelpingHighLLMErrorRate
+        expr: sum(rate(helping_llm_errors_total[5m])) / clamp_min(sum(rate(helping_agent_runs_total[5m])), 0.01) > 0.1
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Доля ошибок LLM выше 10%"
+      - alert: HelpingSlowResponses
+        expr: histogram_quantile(0.95, sum(rate(helping_request_duration_seconds_bucket[10m])) by (le)) > 60
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "p95 обработки заявки выше 60 секунд"

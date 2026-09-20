@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: Helping
+    folder: IT Helping
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
